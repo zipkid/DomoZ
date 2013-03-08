@@ -1,0 +1,20 @@
+--- 
+:snmp: 
+  :server: 10.0.4.122
+:thermostat: 
+  :minimum_temp: 16
+:sensors: 
+  :rom_C200080230866410: 
+    :main: true
+    :name: keuken
+  :rom_7400080230ABFA10: 
+    :name: eetplaats
+  :rom_B50008023097A710: 
+    :name: buiten
+  :rom_660008023078E910: 
+    :name: bureau
+:calendar: 
+  :calendar_id: <calendar_id>@group.calendar.google.com
+:credentials: 
+  :client_id: <client_id> 
+  :client_secret: <client_secret> 
