@@ -4,15 +4,27 @@ require 'google/api_client'
 require 'rest_client'
 require 'json'
 require 'time'
+require 'pp'
+
+require File.expand_path(File.join(File.dirname(__FILE__), '../domoz/conf'))
 
 class Google_oauth2
    
   attr_reader :connected, :client_id, :client_secret, :device_code, :user_code, :verification_url, :refresh_token, :interval, :id_token, :access_token, :verification_interval, :verification_expires_in, :verification_interval_start
 
   def initialize args
-    args.each do |k,v|
-      instance_variable_set("@#{k}", v) unless v.nil?
-    end
+    #args.each do |k,v|
+    #  instance_variable_set("@#{k}", v) unless v.nil?
+    #end
+    @d_conf = Domoz::Conf.new( :path => args[:configpath], :file => 'domoz' )
+    @a_conf = Domoz::Conf.new( :path => args[:configpath], :file => 'domoz-oauth' )
+
+    d_c = @d_conf.conf[:google]
+
+    pp d_c
+
+    @client_id = d_c[:client_id]
+    @client_secret = d_c[:client_secret]
   end
 
   def get_auth
@@ -41,8 +53,8 @@ class Google_oauth2
       :client_id => @client_id,
       :scope => 'https://www.googleapis.com/auth/calendar',
     }
+    pp data
     json = RestClient.post "https://accounts.google.com/o/oauth2/device/code", data
-    #response = JSON.parse(RestClient.post "https://accounts.google.com/o/oauth2/device/code", data)
     response = JSON.parse(json)
     #puts response.inspect
     if response["device_code"]
@@ -58,9 +70,11 @@ class Google_oauth2
     end
   rescue RestClient::BadRequest => e
     puts 'Bad request'
+    puts e.message
     puts e.backtrace
   rescue => e
-    puts 'Something else bad happened'
+    puts 'Something else bad happened in during get_user_code'
+    puts e.message
     puts e.backtrace
   end
 
@@ -72,9 +86,9 @@ class Google_oauth2
       :code => @device_code,
       :grant_type => 'http://oauth.net/grant_type/device/1.0',
     }
-    
+
     keep_trying = true 
-    
+
     while keep_trying
       sleep ( @verification_interval + 1 )
       keep_trying = false if (Time.now - @verification_interval_start) > @verification_expires_in 
@@ -82,7 +96,7 @@ class Google_oauth2
         json = RestClient.post "https://accounts.google.com/o/oauth2/token", data
         response = JSON.parse(json)
         #puts response.inspect
-        
+
         if response["error"]
           if response["error"] == "authorization_pending"
             puts "Still waiting for user authorization"
@@ -105,9 +119,11 @@ class Google_oauth2
     end
   rescue RestClient::BadRequest => e
     puts "Bad request during 'refresh_token'"
+    puts e.message
     puts e.backtrace
   rescue => e
     puts "Something else bad happened during 'refresh_token'" 
+    puts e.message
     puts e.backtrace
   end
 
@@ -129,9 +145,11 @@ class Google_oauth2
     end
   rescue RestClient::BadRequest => e
     puts "Bad request during 'refresh_token'"
+    puts e.message
     puts e.backtrace
   rescue => e
     puts "Something else bad happened during 'refresh_token'" 
+    puts e.message
     puts e.backtrace
   end
 

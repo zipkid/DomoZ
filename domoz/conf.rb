@@ -9,9 +9,10 @@ module Domoz
 
     def initialize args = nil
       args ||= {}
-      args[:path] ||= './'
-      args[:file] ||= 'domoz.yaml'
-      @config_file = File.join(args[:path], args[:file])
+      args[:path] ||= './config'
+      args[:file] ||= 'domoz'
+      args[:ext]  ||= 'yaml'
+      @config_file = File.join(args[:path], args[:file]+'.'+args[:ext])
     end
 
     def conf

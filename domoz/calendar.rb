@@ -5,16 +5,25 @@ module Domoz
   # Initialize the client & Google+ API
   require 'google/api_client'
 
+  require File.expand_path(File.join(File.dirname(__FILE__), '../lib/google_oauth2'))
+  require File.expand_path(File.join(File.dirname(__FILE__), 'conf'))
+
   # https://github.com/puppetlabs/facter/blob/master/lib/facter/util/ec2.rb
   # Here and/or in calendar....
 
   class Calendar
     
     def initialize args
-      #@default_wanted_temp = 16
-      @calendar_id = args[:calendar_id]
-      @oauth = args[:oauth]
-      @default_wanted_temp = args[:wanted_temp]
+      @configpath = args[:configpath]
+
+      @conf = Domoz::Conf.new( :path => @configpath, :file => 'domoz' )
+
+      #@calendar_id = config[:google][:calendar_id]
+      #@oauth = args[:oauth]
+      #@default_wanted_temp = args[:wanted_temp]
+
+      @oauth = Google_oauth2.new( :configpath => args[:configpath] )
+
       @client = Google::APIClient.new(
         :application_name => "DomoZ",
         :application_version => "0.0.1"
@@ -25,10 +34,16 @@ module Domoz
       puts 'Connection Failed'
       puts e.message
     rescue => e
-      puts 'Something else bad happened'
+      puts 'Something else bad happened in initialize'
+      puts e.message
       puts e.backtrace
+      puts '------'
     end
     
+    def get_auth
+      @oauth.get_auth
+    end
+
     def get_wanted_temp
       wanted_temp = @default_wanted_temp 
       calendar_default_temp = false
@@ -99,7 +114,8 @@ module Domoz
       puts 'Connection Failed'
       puts e.message
     rescue => e
-      puts 'Something else bad happened'
+      puts 'Something else bad happened in insert_current_event'
+      puts e.message
       puts e.backtrace
     end
 
@@ -131,7 +147,8 @@ module Domoz
       puts 'Connection Failed'
       puts e.message
     rescue => e
-      puts 'Something else bad happened'
+      puts 'Something else bad happened in update_current_event'
+      puts e.message
       puts e.backtrace
     end
 
@@ -186,7 +203,8 @@ module Domoz
       puts 'Connection Failed'
       puts e.message
     rescue => e
-      puts 'Something else bad happened'
+      puts 'Something else bad happened in get_events'
+      puts e.message
       puts e.backtrace
       puts e.class
       # Faraday::Error::ConnectionFailed
@@ -217,10 +235,11 @@ module Domoz
       refresh_auth
       retry
     rescue Faraday::Error::ConnectionFailed => e
-      puts 'Connection Failed'
+      puts 'Connection Failed in get_event_instances'
       puts e.message
     rescue => e
-      puts 'Something else bad happened'
+      puts 'Something else bad happened in get_event_instances'
+      puts e.message
       puts e.backtrace
     end
     
