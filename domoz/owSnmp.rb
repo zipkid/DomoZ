@@ -67,7 +67,7 @@ module Domoz
           else
             val = vb.value.to_s
           end
-          val = "rom_" + val if name == 'owDeviceROM'
+          #val = "rom_" + val if name == 'owDeviceROM'
           device_data[name.to_sym] = val
         end
       end

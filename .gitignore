@@ -17,6 +17,6 @@ tmp
 _yardoc
 doc/
 
-domoz.yaml
+domoz-auth.yaml
 domoz-oauth.yaml
 

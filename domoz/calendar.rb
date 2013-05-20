@@ -12,15 +12,15 @@ module Domoz
   # Here and/or in calendar....
 
   class Calendar
+    attr_accessor :wanted_temp
     
     def initialize args
       @configpath = args[:configpath]
 
-      @conf = Domoz::Conf.new( :path => @configpath, :file => 'domoz' )
+      @conf = Domoz::Conf.new( :path => @configpath, :file => 'domoz-auth' )
 
-      #@calendar_id = config[:google][:calendar_id]
-      #@oauth = args[:oauth]
-      #@default_wanted_temp = args[:wanted_temp]
+      @a_conf = @conf.conf
+      @calendar_id = @a_conf[:google][:calendar_id]
 
       @oauth = Google_oauth2.new( :configpath => args[:configpath] )
 
@@ -30,6 +30,11 @@ module Domoz
       )
       # @client.authorization.access_token = @oauth.access_token
       @calendar = @client.discovered_api('calendar', 'v3')
+
+      #if get_auth
+      #  get_wanted_temp
+      #end
+
     rescue Faraday::Error::ConnectionFailed => e
       puts 'Connection Failed'
       puts e.message
@@ -45,6 +50,7 @@ module Domoz
     end
 
     def get_wanted_temp
+      return unless get_auth
       wanted_temp = @default_wanted_temp 
       calendar_default_temp = false
       override_wanted_temp = false
@@ -68,7 +74,7 @@ module Domoz
 
       wanted_temp = calendar_default_temp if calendar_default_temp
       wanted_temp = override_wanted_temp if override_wanted_temp
-
+      @wanted_temp = wanted_temp.to_f
       wanted_temp
     end
 
@@ -158,6 +164,8 @@ module Domoz
         puts "Return val: "+result.response.status.to_s
         if result.response.status == 401
           raise OauthRefreshError, "#{Time.now}: oauth failed, need to attempt refresh"
+        #else
+        #  raise CheckResultError, "Something is wrong with the result"
         end
       end
     end

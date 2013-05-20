@@ -1,0 +1,15 @@
+--- 
+:snmp: 
+  :server: 10.0.4.122
+:thermostat: 
+  :minimum_temp: 16
+:sensors: 
+  :'B50008023097A710': 
+    :name: buiten
+  :'660008023078E910': 
+    :name: bureau
+  :'C200080230866410': 
+    :main: true
+    :name: keuken
+  :'7400080230ABFA10': 
+    :name: eetplaats

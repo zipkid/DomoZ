@@ -15,7 +15,8 @@ module Domoz
       @config_file = File.join(args[:path], args[:file]+'.'+args[:ext])
     end
 
-    def conf
+    def conf conf = nil
+      @conf = conf unless conf.nil?
       save_conf if need_saving
       load_conf if need_loading
       @conf
@@ -43,13 +44,17 @@ module Domoz
     end
 
     def load_conf
+      #puts "Loading conf from #{@config_file}"
       @read_conf = YAML::load_file File.join(@config_file)
+      @read_conf ||= Hash.new
       @conf = deep_copy @read_conf
       @last_load = Time.now
     end
 
     def save_conf
+      #puts "Saving conf to #{@config_file}"
       File.open(File.join(@config_file), "w") {|f| f.write(@conf.to_yaml) }
+      load_conf
     end
   end
 end

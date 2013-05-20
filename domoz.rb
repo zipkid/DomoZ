@@ -22,8 +22,11 @@ require 'calendar'
 require 'owSnmp'
 require 'wiringpi'
 
+require 'pp'
+
 path = File.expand_path(File.dirname(__FILE__))
-config_path = File.expand_path(File.join(File.dirname(__FILE__), 'config'))
+#config_path = File.expand_path(File.join(File.dirname(__FILE__), 'config'))
+config_path = File.join( path, 'config')
 
 options = {
   :backtrace  => true,
@@ -40,28 +43,87 @@ Daemons.daemonize(options)
 #puts "Got Auth, now move on"
 
 start_time = Time.now
-snmp_exec_time = Time.at(0)
-cal_exec_time = Time.at(0)
 thermostat_exec_time = Time.at(0)
 
 lower_drop_temp = 0.5
 higher_rise_temp = 0.5 
 
-snmp_loop_time = 5
-cal_loop_time = 120
 thermostat_loop_time = 30
 
-#conf_domoz = Conf.new( :path => config_path, :file => 'domoz' ) if ! conf_domoz
-#conf_oauth = Conf.new( :path => config_path, :file => 'domoz-oauth' ) if ! conf_oauth
-
-oauth = nil
 calendar = nil
 ows = nil
 wpi = nil
 
-calendar = Domoz::Calendar.new( :configpath => config_path )
 
-while true
+@wanted_temp = 0
+@curr_temp = 0
+@curr_msg = 'No current temperature data yet...'
+@curr_description = 'Description not set yet'
+
+ows_thread = Thread.new do
+  snmp_exec_time = Time.at(0)
+  snmp_loop_time = 5
+  while true
+    if( (Time.now - snmp_exec_time) > snmp_loop_time )
+      ows = Domoz::OwSnmp.new
+      temp_data = ows.get_temp
+      
+      pp temp_data
+
+      sensors = config[:sensors]
+      msg = ''
+      description = ''
+      if temp_data
+        temp_data.each do |t|
+          rom = t[:owDeviceROM] 
+          if sensors[rom.to_sym][:main] == true
+            @curr_msg = t[:owDS18S20Temperature]
+            @curr_temp = t[:owDS18S20Temperature].to_f
+          end
+          description += sensors[rom.to_sym][:name]
+          description += " :::: "
+          description +=  t[:owDS18S20Temperature] 
+          description +=  "\n"
+          @curr_description = description
+        end
+      end
+      snmp_exec_time = Time.now
+    end
+  end
+end
+
+cal_thread = Thread.new do
+  cal_exec_time = Time.at(0)
+  cal_loop_time = 120
+  cal_loop_time = 60
+  while true
+    if( (Time.now - cal_exec_time) > cal_loop_time )
+      calendar = Domoz::Calendar.new( :configpath => config_path, :wanted_temp => @wanted_temp )
+      @wanted_temp = calendar.get_wanted_temp
+      calendar.set_current_msg( @curr_msg, @curr_description )
+      puts "Calendar run finished - #{@wanted_temp}"
+      cal_exec_time = Time.now
+    end
+  end
+end
+
+out = Thread.new do
+  while true
+    sleep 3
+    puts "...... - Wanted_temp  : #{@wanted_temp}"
+    puts "...... - Current_temp : #{@current_temp}"
+  end
+end
+
+
+cal_thread.join
+ows_thread.join
+out.join
+
+
+
+#while true
+while false
 
   ows = Domoz::OwSnmp.new if ! ows
   wpi = Domoz::WiringPiDomoz.new( :pins => [ 0, 1 ] ) if ! wpi
