@@ -35,8 +35,8 @@ class Google_oauth2
     end
     if ! @conf[:oauth][:access_token]
       get_access_code || return
-      puts "get_access_code"
-      pp @conf
+      #puts "get_access_code"
+      #pp @conf
       @oa_c.conf @conf
     end
     @access_token = @conf[:oauth][:access_token]
@@ -119,7 +119,7 @@ class Google_oauth2
             puts "Unknow error response : '#{response["error"]}'"
           end
         elsif response["access_token"]
-          puts "got #{response["access_token"]}"
+          #puts "got #{response["access_token"]}"
           @conf[:oauth][:refresh_token] = response["refresh_token"]
           @conf[:oauth][:token_type] = response["token_type"]
           @conf[:oauth][:access_token] = response["access_token"]

@@ -31,9 +31,11 @@ module Domoz
       # @client.authorization.access_token = @oauth.access_token
       @calendar = @client.discovered_api('calendar', 'v3')
 
-      #if get_auth
-      #  get_wanted_temp
-      #end
+      if get_auth
+        get_wanted_temp
+      end
+
+      #puts "And wanted_temp = #{@wanted_temp}"
 
     rescue Faraday::Error::ConnectionFailed => e
       puts 'Connection Failed'
@@ -51,7 +53,7 @@ module Domoz
 
     def get_wanted_temp
       return unless get_auth
-      wanted_temp = @default_wanted_temp 
+      wanted_temp = 16 # @default_wanted_temp 
       calendar_default_temp = false
       override_wanted_temp = false
       events = get_events
@@ -68,13 +70,14 @@ module Domoz
         #puts e.summary
         #puts e.start["dateTime"]
         #puts e.end["dateTime"]
-        #puts
+        puts
 
       end
 
       wanted_temp = calendar_default_temp if calendar_default_temp
       wanted_temp = override_wanted_temp if override_wanted_temp
       @wanted_temp = wanted_temp.to_f
+
       wanted_temp
     end
 

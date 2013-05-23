@@ -1,5 +1,6 @@
 module Domoz
   require 'rubygems'
+  require 'wiringpi'
 
   class WiringPiDomoz
 
@@ -8,7 +9,7 @@ module Domoz
     def initialize args
       require 'wiringpi'
       @pins = args[:pins]
-      @io = WiringPi::GPIO.new
+      @io = ::WiringPi::GPIO.new
       @pins.each {|p| @io.mode( p, OUTPUT ) }
     rescue => e
       puts e.message
@@ -27,7 +28,7 @@ module Domoz
     end
 
     def test
-      io = WiringPi::GPIO.new
+      io = ::WiringPi::GPIO.new
       pin = 0
       io.mode( pin, OUTPUT )
       io.write( pin, HIGH )
