@@ -37,14 +37,14 @@ module Domoz
 
       #puts "And wanted_temp = #{@wanted_temp}"
 
-    rescue Faraday::Error::ConnectionFailed => e
-      puts 'Connection Failed'
-      puts e.message
-    rescue => e
-      puts 'Something else bad happened in initialize'
-      puts e.message
-      puts e.backtrace
-      puts '------'
+#    rescue Faraday::Error::ConnectionFailed => e
+#      puts 'Connection Failed'
+#      puts e.message
+#    rescue => e
+#      puts 'Something else bad happened in initialize'
+#      puts e.message
+#      puts e.backtrace
+#      puts '------'
     end
     
     def get_auth

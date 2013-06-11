@@ -3,8 +3,8 @@ require 'rubygems'        # if you use RubyGems
 require 'daemons'
 require 'yaml'
 require 'time'
+require 'getoptlong'
 
-debug = ARGV[0]
 
 # Prepend RUBYLIB with our own libdir
 $:.unshift File.join( %w{ . domoz } )
@@ -15,6 +15,35 @@ require 'owSnmp'
 require 'wiringpi'
 
 require 'pp'
+
+
+opts = GetoptLong.new(
+  [ '--help', '-h', GetoptLong::NO_ARGUMENT ],
+  [ '--debug', '-d', GetoptLong::OPTIONAL_ARGUMENT ]
+)
+
+debug = ARGV[0]
+opts.each do |opt, arg|
+  case opt
+    when '--help'
+      puts <<-EOF
+domoz.rb [OPTION]
+
+-h, --help:
+   show help
+
+--debug [level]:
+  Debug level
+      EOF
+    when '--debug'
+      if arg == ''
+        debug = 1
+      else
+        debug = arg
+      end
+  end
+end
+
 
 path = File.expand_path(File.dirname(__FILE__))
 config_path = File.join( path, 'config')
@@ -37,8 +66,11 @@ Daemons.daemonize(options)
 @curr_description = ''
 
 run_ows = true
+run_ows = false
 run_cal = true 
+#run_cal = false 
 run_wpi = true 
+run_wpi = false
 
 if run_ows
   ows_thread = Thread.new do
@@ -81,7 +113,7 @@ if run_cal
   cal_thread = Thread.new do
     cal_exec_time = Time.at(0)
     cal_loop_time = 120
-    cal_loop_time = 60
+    cal_loop_time = 30
     while true
       if( (Time.now - cal_exec_time) > cal_loop_time )
         puts "Starting Calendar run"
@@ -98,7 +130,7 @@ if run_cal
 end
 
 if run_wpi
-  wpi_tread = Thread.new do
+  wpi_thread = Thread.new do
     thermostat_exec_time = Time.at(0)
     thermostat_loop_time = 30
 
@@ -106,9 +138,12 @@ if run_wpi
     higher_rise_temp = 0.5 
     while true
       if( (Time.now - thermostat_exec_time) > thermostat_loop_time )
-        puts "Starting RPI run"
+        puts "Starting WiringPi run"
 
-        wpi = Domoz::WiringPiDomoz.new( :pins => [ 0, 1 ] )
+        wpi = Domoz::WiringPiDomoz.new( :pins => [ 0, 4 ] )
+        
+        #wpi.test
+
         puts "#{Time.now}: #{@curr_temp}  #{@wanted_temp} - #{lower_drop_temp}  or + #{higher_rise_temp}"
         # thermostat decision
         if @curr_temp <= ( @wanted_temp - lower_drop_temp )
