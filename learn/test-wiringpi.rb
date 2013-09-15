@@ -41,6 +41,7 @@ end
 pin = pin.to_i
 
 io = WiringPi::GPIO.new
+io.mode( pin, OUTPUT )
 io.write( pin, LOW )
 read = io.read( pin )
 puts "read : #{read}"
