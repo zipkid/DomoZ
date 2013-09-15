@@ -20,3 +20,5 @@ doc/
 domoz-auth.yaml
 domoz-oauth.yaml
 
+deploy.sh
+
