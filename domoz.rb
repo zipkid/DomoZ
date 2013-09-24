@@ -61,10 +61,17 @@ options = {
 
 Daemons.daemonize(options)
 
-@wanted_temp = 0
+@wanted_temp = 15
 @curr_temp = 0
 @curr_msg = ''
 @curr_description = ''
+
+@temperature_data = Array.new
+
+@activate_heater = false
+
+
+run_calc = true
 
 run_ows = true
 #run_ows = false
@@ -72,6 +79,9 @@ run_cal = true
 #run_cal = false 
 run_wpi = true 
 #run_wpi = false
+
+
+
 
 if run_ows
   ows_thread = Thread.new do
@@ -81,28 +91,7 @@ if run_ows
       if( (Time.now - snmp_exec_time) > snmp_loop_time )
         puts "starting OWS Run"
         ows = Domoz::OwSnmp.new
-        temp_data = ows.get_temp
-        
-        conf = Domoz::Conf.new( :path => config_path, :file => 'domoz' )
-        config = conf.conf
-        sensors = config[:sensors]
-
-        msg = ''
-        description = ''
-        if temp_data
-          temp_data.each do |t|
-            rom = t[:owDeviceROM] 
-            if sensors[rom.to_sym][:main] == true
-              @curr_msg = t[:owDS18S20Temperature]
-              @curr_temp = t[:owDS18S20Temperature].to_f
-            end
-            description += sensors[rom.to_sym][:name]
-            description += " :::: "
-            description +=  t[:owDS18S20Temperature] 
-            description +=  "\n"
-            @curr_description = description
-          end
-        end
+        @temperature_data = ows.get_temp
         snmp_exec_time = Time.now
         puts "OWS run finished"
       end
@@ -143,17 +132,13 @@ if run_wpi
 
         wpi = Domoz::WiPi.new( :pins => [ 0 ] )
         led = Domoz::WiPi.new( :pins => [ 5 ] )
-        #wpi.test_ports
-
-        puts "#{Time.now}: #{@curr_temp}  #{@wanted_temp} - #{lower_drop_temp}  or + #{higher_rise_temp}"
-        # thermostat decision
-        if @curr_temp <= ( @wanted_temp - lower_drop_temp )
+        if @activate_heater
           if ! wpi.low?
             puts "#{Time.now}: Current: #{@curr_temp} - Wanted: #{@wanted_temp} - #{lower_drop_temp} (#{@wanted_temp - lower_drop_temp}) : Activating... " 
             wpi.low
             led.high
           end
-        elsif @curr_temp >= ( @wanted_temp + higher_rise_temp )
+        elsif ! @activate_heater
           if wpi.low?
             puts "#{Time.now}: Current: #{@curr_temp} - Wanted: #{@wanted_temp} + #{higher_rise_temp} (#{@wanted_temp + higher_rise_temp}) : Deactivating..."
             wpi.high
@@ -164,6 +149,58 @@ if run_wpi
         puts "WiPi run finished"
       end 
     end
+  end
+end
+
+if run_calc
+  lower_drop_temp = 0.5
+  higher_rise_temp = 0.5 
+  while true
+    # @wanted_temp = 15
+    # @curr_temp = 0
+    # @curr_msg = ''
+    # @curr_description = ''
+    puts '================================================='
+
+    conf = Domoz::Conf.new( :path => config_path, :file => 'domoz' )
+    config = conf.conf
+    sensors = config[:sensors]
+
+    msg = ''
+    description = ''
+    if @temperature_data
+      @temperature_data.each do |t|
+        rom = t[:owDeviceROM] 
+        if sensors[rom.to_sym][:main] == true
+          @curr_msg = t[:owDS18S20Temperature]
+          @curr_temp = t[:owDS18S20Temperature].to_f
+        end
+        description += sensors[rom.to_sym][:name]
+        description += " :::: "
+        description +=  t[:owDS18S20Temperature] 
+        description +=  "\n"
+        @curr_description = description
+      end
+    end
+
+    puts " === #{Time.now}: #{@curr_temp}  #{@wanted_temp} - #{lower_drop_temp}  or + #{higher_rise_temp}"
+    if @curr_temp <= ( @wanted_temp - lower_drop_temp )
+      if ! @activate_heater
+        @activate_heater = true
+        puts " === Activation needed"
+      end
+    elsif @curr_temp >= ( @wanted_temp + higher_rise_temp )
+      if @activate_heater
+        @activate_heater = false
+        puts " === De-Activation needed"
+      end
+    end
+
+
+
+
+    puts '================================================='
+    sleep 5
   end
 end
 

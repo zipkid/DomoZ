@@ -4,12 +4,24 @@
 :thermostat: 
   :minimum_temp: 16
 :sensors: 
-  :'B50008023097A710': 
-    :name: buiten
   :'660008023078E910': 
-    :name: bureau
+    :userbyte1: 1
+    :userbyte2: 1
+    :name: Bureau
   :'C200080230866410': 
-    :main: true
-    :name: keuken
+    :userbyte1: 2
+    :userbyte2: 2
+    :name: Keuken
   :'7400080230ABFA10': 
-    :name: eetplaats
+    :userbyte1: x 
+    :userbyte2: x
+    :name: x
+  :'B50008023097A710': 
+    :userbyte1: 4
+    :userbyte2: 4
+    :main: true
+    :name: Emma
+  :'38000802308FAD10':
+    :userbyte1: 6
+    :userbyte2: 
+    :name: Marie
