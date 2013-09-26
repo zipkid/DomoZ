@@ -70,7 +70,6 @@ Daemons.daemonize(options)
 
 @activate_heater = false
 
-
 run_calc = true
 
 run_ows = true
@@ -80,23 +79,9 @@ run_cal = true
 run_wpi = true 
 #run_wpi = false
 
-
-
-
 if run_ows
-  ows_thread = Thread.new do
-    snmp_exec_time = Time.at(0)
-    snmp_loop_time = 10
-    while true
-      if( (Time.now - snmp_exec_time) > snmp_loop_time )
-        puts "starting OWS Run"
-        ows = Domoz::OwSnmp.new
-        @temperature_data = ows.get_temp
-        snmp_exec_time = Time.now
-        puts "OWS run finished"
-      end
-    end
-  end
+  ows = Domoz::OwSnmp.new
+  ows.run
 end
 
 if run_cal
@@ -168,19 +153,18 @@ if run_calc
 
     msg = ''
     description = ''
-    if @temperature_data
-      @temperature_data.each do |t|
-        rom = t[:owDeviceROM] 
-        if sensors[rom.to_sym][:main] == true
-          @curr_msg = t[:owDS18S20Temperature]
-          @curr_temp = t[:owDS18S20Temperature].to_f
-        end
-        description += sensors[rom.to_sym][:name]
-        description += " :::: "
-        description +=  t[:owDS18S20Temperature] 
-        description +=  "\n"
-        @curr_description = description
+
+    ows.devices_data.each do |t|
+      rom = t[:owDeviceROM] 
+      if sensors[rom.to_sym][:main] == true
+        @curr_msg = t[:owDS18S20Temperature]
+        @curr_temp = t[:owDS18S20Temperature].to_f
       end
+      description += sensors[rom.to_sym][:name]
+      description += " :::: "
+      description +=  t[:owDS18S20Temperature] 
+      description +=  "\n"
+      @curr_description = description
     end
 
     puts " === #{Time.now}: #{@curr_temp}  #{@wanted_temp} - #{lower_drop_temp}  or + #{higher_rise_temp}"
