@@ -61,77 +61,54 @@ options = {
 
 Daemons.daemonize(options)
 
-@wanted_temp = 15
-@curr_temp = 0
-@curr_msg = ''
-@curr_description = ''
-
-@temperature_data = Array.new
-
 @activate_heater = false
 
 run_calc = true
 
 run_ows = true
-#run_ows = false
 run_cal = true 
-#run_cal = false 
 run_wpi = true 
-#run_wpi = false
 
 if run_ows
   ows = Domoz::OwSnmp.new
+  ows.loop_time = 20
   ows.run
 end
 
 if run_cal
-  cal_thread = Thread.new do
-    cal_exec_time = Time.at(0)
-    cal_loop_time = 120
-    cal_loop_time = 30
-    while true
-      if( (Time.now - cal_exec_time) > cal_loop_time )
-        puts "Starting Calendar run"
-        calendar = Domoz::Calendar.new( :configpath => config_path, :wanted_temp => @wanted_temp )
-        @wanted_temp = calendar.wanted_temp
-        if ! @curr_msg.empty? 
-          calendar.set_current_msg( @curr_msg, @curr_description )
-        end
-        cal_exec_time = Time.now
-        puts "Calendar run finished - #{@wanted_temp}"
-      end
-    end
-  end
+  calendar = Domoz::Calendar.new( :configpath => config_path )
+  calendar.loop_time = 60
+  calendar.run
 end
 
 if run_wpi
   wpi_thread = Thread.new do
     thermostat_exec_time = Time.at(0)
-    thermostat_loop_time = 30
+    thermostat_loop_time = 5
 
     lower_drop_temp = 0.5
     higher_rise_temp = 0.5 
     while true
       if( (Time.now - thermostat_exec_time) > thermostat_loop_time )
-        puts "Starting WiPi run"
+        puts "+ WiPi run"
 
         wpi = Domoz::WiPi.new( :pins => [ 0 ] )
         led = Domoz::WiPi.new( :pins => [ 5 ] )
         if @activate_heater
           if ! wpi.low?
-            puts "#{Time.now}: Current: #{@curr_temp} - Wanted: #{@wanted_temp} - #{lower_drop_temp} (#{@wanted_temp - lower_drop_temp}) : Activating... " 
+            puts "#{Time.now}: Activating" 
             wpi.low
             led.high
           end
         elsif ! @activate_heater
           if wpi.low?
-            puts "#{Time.now}: Current: #{@curr_temp} - Wanted: #{@wanted_temp} + #{higher_rise_temp} (#{@wanted_temp + higher_rise_temp}) : Deactivating..."
+            puts "#{Time.now}: Deactivating"
             wpi.high
             led.low
           end
         end
         thermostat_exec_time = Time.now
-        puts "WiPi run finished"
+        puts "- WiPi run"
       end 
     end
   end
@@ -140,47 +117,50 @@ end
 if run_calc
   lower_drop_temp = 0.5
   higher_rise_temp = 0.5 
+  current_temperature = 20
+  message = ''
   while true
-    # @wanted_temp = 15
-    # @curr_temp = 0
-    # @curr_msg = ''
-    # @curr_description = ''
     puts '================================================='
 
     conf = Domoz::Conf.new( :path => config_path, :file => 'domoz' )
     config = conf.conf
     sensors = config[:sensors]
+    sensor_data = Hash.new
 
-    msg = ''
+    puts " = Last OWS update time: #{ows.update_time}"
     description = ''
-
+    cnt = 0
     ows.devices_data.each do |t|
+      cnt += 1
+      puts "cnt:#{cnt}"
       rom = t[:owDeviceROM] 
       if sensors[rom.to_sym][:main] == true
-        @curr_msg = t[:owDS18S20Temperature]
-        @curr_temp = t[:owDS18S20Temperature].to_f
+        message = t[:owDS18S20Temperature]
+        current_temperature = t[:owDS18S20Temperature].to_f
+        calendar.message = message.dup
       end
       description += sensors[rom.to_sym][:name]
       description += " :::: "
       description +=  t[:owDS18S20Temperature] 
       description +=  "\n"
-      @curr_description = description
+      sensor_data[sensors[rom.to_sym][:name].to_sym] = t[:owDS18S20Temperature]
     end
+    calendar.description = description.dup
 
-    puts " === #{Time.now}: #{@curr_temp}  #{@wanted_temp} - #{lower_drop_temp}  or + #{higher_rise_temp}"
-    if @curr_temp <= ( @wanted_temp - lower_drop_temp )
+    wanted_temperature = calendar.wanted_temp
+
+    puts " = #{Time.now}: #{current_temperature}  #{wanted_temperature} - #{lower_drop_temp}  or + #{higher_rise_temp}"
+    if current_temperature <= ( wanted_temperature - lower_drop_temp )
       if ! @activate_heater
         @activate_heater = true
-        puts " === Activation needed"
+        puts " = Activation needed"
       end
-    elsif @curr_temp >= ( @wanted_temp + higher_rise_temp )
+    elsif current_temperature >= ( wanted_temperature + higher_rise_temp )
       if @activate_heater
         @activate_heater = false
-        puts " === De-Activation needed"
+        puts " = De-Activation needed"
       end
     end
-
-
 
 
     puts '================================================='

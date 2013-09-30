@@ -3,10 +3,13 @@ module Domoz
   require 'snmp'
 
   class OwSnmp
-    attr_accessor :devices_data
+    attr_accessor :devices_data, :update_time, :loop_time
 
     def initialize
       @devices_data = Array.new
+      @update_time = Time.now
+      @loop_time = 20
+
       #SNMP::MIB.import_module("OW_Server_MIB_v2.22.mib", './mib/')
       #mib = SNMP::MIB.new
       #mib.load_module("EDS-MIB",'./mib/')
@@ -15,21 +18,24 @@ module Domoz
                      'owDS18S20Temperature',
                      'owDS18S20UserByte1',
                      'owDS18S20UserByte2' ]                  
+
+      ObjectSpace.define_finalizer(self, Proc.new{ if @ows_thread.defined? then @ows_tread.join end })
     end
 
     def run
-      ows_thread = Thread.new do
+      @ows_thread = Thread.new do
         snmp_exec_time = Time.at(0)
-        snmp_loop_time = 10
+        snmp_loop_time = @loop_time
         while true
           if( (Time.now - snmp_exec_time) > snmp_loop_time )
-            #puts "starting OWS Run"
+            puts "+ OWS Run"
             #ows = Domoz::OwSnmp.new
             #@temperature_data = ows.get_temp
             get_device_count
             get_devices_data
+            @update_time = Time.now
             snmp_exec_time = Time.now
-            #puts "OWS run finished"
+            puts "- OWS run"
           end
         end
       end

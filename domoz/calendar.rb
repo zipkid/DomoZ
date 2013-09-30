@@ -12,10 +12,15 @@ module Domoz
   # Here and/or in calendar....
 
   class Calendar
-    attr_accessor :wanted_temp
+    attr_accessor :wanted_temp, :message, :description, :loop_time
     
     def initialize args
+      @wanted_temp = 0
+      @message = ''
+      @description = ''
       @configpath = args[:configpath]
+      @loop_time = args[:looptime]
+      @loop_time ||= 60
 
       @conf = Domoz::Conf.new( :path => @configpath, :file => 'domoz-auth' )
 
@@ -31,11 +36,13 @@ module Domoz
       # @client.authorization.access_token = @oauth.access_token
       @calendar = @client.discovered_api('calendar', 'v3')
 
-      if get_auth
-        get_wanted_temp
-      end
+      #if get_auth
+      #  get_wanted_temp
+      #end
 
       #puts "And wanted_temp = #{@wanted_temp}"
+
+      ObjectSpace.define_finalizer(self, Proc.new{ if @cal_thread.defined? then @cal_tread.join end })
 
 #    rescue Faraday::Error::ConnectionFailed => e
 #      puts 'Connection Failed'
@@ -45,6 +52,24 @@ module Domoz
 #      puts e.message
 #      puts e.backtrace
 #      puts '------'
+    end
+
+    def run
+      @cal_thread = Thread.new do
+        cal_exec_time = Time.at(0)
+        cal_loop_time = @loop_time
+        while true
+          if( (Time.now - cal_exec_time) > cal_loop_time )
+            puts "+ Cal run"
+            get_wanted_temp
+            #puts "msg:#{@message}"
+            #puts "des:#{@description}"
+            set_current_msg( @message, @description )
+            cal_exec_time = Time.now
+            puts "- Cal run"
+          end
+        end
+      end
     end
     
     def get_auth
