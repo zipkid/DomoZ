@@ -67,12 +67,13 @@ module Domoz
     end
 
     def get_devices_data
-      @devices_data = Array.new()
+      devices_data = Array.new()
       i=0
       begin
-        @devices_data << get_device_data(i)
+        devices_data << get_device_data(i)
         i+=1
       end while i < @device_count
+      @devices_data = devices_data.dup
     end
 
     def get_device_data( index )

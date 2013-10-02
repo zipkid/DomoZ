@@ -5,8 +5,12 @@ module Domoz
   # Initialize the client & Google+ API
   require 'google/api_client'
 
-  require File.expand_path(File.join(File.dirname(__FILE__), '../lib/google_oauth2'))
-  require File.expand_path(File.join(File.dirname(__FILE__), 'conf'))
+  $:.unshift File.join( %w{ . / } )
+
+  #require File.expand_path(File.join(File.dirname(__FILE__), '../google_oauth2'))
+  require 'google_oauth2'
+  #require File.expand_path(File.join(File.dirname(__FILE__), 'conf'))
+  require 'conf'
 
   # https://github.com/puppetlabs/facter/blob/master/lib/facter/util/ec2.rb
   # Here and/or in calendar....

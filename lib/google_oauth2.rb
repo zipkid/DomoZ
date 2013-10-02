@@ -6,7 +6,8 @@ require 'json'
 require 'time'
 require 'pp'
 
-require File.expand_path(File.join(File.dirname(__FILE__), '../domoz/conf'))
+#require File.expand_path(File.join(File.dirname(__FILE__), '../domoz/conf'))
+require 'conf'
 
 class Google_oauth2
    
