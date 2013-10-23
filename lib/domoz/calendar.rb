@@ -4,6 +4,7 @@ module Domoz
   require 'rubygems'
   # Initialize the client & Google+ API
   require 'google/api_client'
+  require 'pp'
 
   $:.unshift File.join( %w{ . / } )
 
@@ -64,13 +65,13 @@ module Domoz
         cal_loop_time = @loop_time
         while true
           if( (Time.now - cal_exec_time) > cal_loop_time )
-            puts "+ Cal run"
+            print "+c"
             get_wanted_temp
             #puts "msg:#{@message}"
             #puts "des:#{@description}"
             set_current_msg( @message, @description )
             cal_exec_time = Time.now
-            puts "- Cal run"
+            print "-c"
           end
         end
       end
@@ -82,7 +83,7 @@ module Domoz
 
     def get_wanted_temp
       return unless get_auth
-      wanted_temp = 16 # @default_wanted_temp 
+      wanted_temp = 15 # @default_wanted_temp 
       calendar_default_temp = false
       override_wanted_temp = false
       events = get_events

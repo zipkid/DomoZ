@@ -28,14 +28,14 @@ module Domoz
         snmp_loop_time = @loop_time
         while true
           if( (Time.now - snmp_exec_time) > snmp_loop_time )
-            puts "+ OWS Run"
+            print "+o"
             #ows = Domoz::OwSnmp.new
             #@temperature_data = ows.get_temp
             get_device_count
             get_devices_data
             @update_time = Time.now
             snmp_exec_time = Time.now
-            puts "- OWS run"
+            print "-o"
           end
         end
       end
