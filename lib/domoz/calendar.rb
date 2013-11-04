@@ -32,48 +32,36 @@ module Domoz
       @a_conf = @conf.conf
       @calendar_id = @a_conf[:google][:calendar_id]
 
-      @oauth = Google_oauth2.new( :configpath => args[:configpath] )
+      begin
+        @oauth = Google_oauth2.new( :configpath => args[:configpath] )
 
-      @client = Google::APIClient.new(
-        :application_name => "DomoZ",
-        :application_version => "0.0.1"
-      )
-      # @client.authorization.access_token = @oauth.access_token
-      @calendar = @client.discovered_api('calendar', 'v3')
-
-      #if get_auth
-      #  get_wanted_temp
-      #end
-
-      #puts "And wanted_temp = #{@wanted_temp}"
-
-      ObjectSpace.define_finalizer(self, Proc.new{ if @cal_thread.defined? then @cal_tread.join end })
-
-#    rescue Faraday::Error::ConnectionFailed => e
-#      puts 'Connection Failed'
-#      puts e.message
-#    rescue => e
-#      puts 'Something else bad happened in initialize'
-#      puts e.message
-#      puts e.backtrace
-#      puts '------'
+        @client = Google::APIClient.new(
+          :application_name => "DomoZ",
+          :application_version => "0.0.1"
+        )
+        # @client.authorization.access_token = @oauth.access_token
+        @calendar = @client.discovered_api('calendar', 'v3')
+      rescue Faraday::Error::ConnectionFailed => e
+        puts "#{Time.now} - #{__LINE__} : #{e.class} #{e.message}"
+      rescue => e
+        puts "#{Time.now} - #{__LINE__} : #{e.class} #{e.message}"
+      end
     end
 
     def run
-      @cal_thread = Thread.new do
-        cal_exec_time = Time.at(0)
-        cal_loop_time = @loop_time
-        while true
-          if( (Time.now - cal_exec_time) > cal_loop_time )
-            print "+c"
-            get_wanted_temp
-            #puts "msg:#{@message}"
-            #puts "des:#{@description}"
-            set_current_msg( @message, @description )
-            cal_exec_time = Time.now
-            print "-c"
-          end
+      cal_exec_time = Time.at(0)
+      cal_loop_time = @loop_time
+      while true
+        if( (Time.now - cal_exec_time) > cal_loop_time )
+          print "+c"
+          get_wanted_temp
+          #puts "msg:#{@message}"
+          #puts "des:#{@description}"
+          set_current_msg( @message, @description )
+          cal_exec_time = Time.now
+          print "-c"
         end
+        sleep 1
       end
     end
     
@@ -86,7 +74,7 @@ module Domoz
       wanted_temp = 15 # @default_wanted_temp 
       calendar_default_temp = false
       override_wanted_temp = false
-      events = get_events
+      events = get_events.to_a
       events.each do |e|
         next if e.summary.downcase.match(/^current/)
         
@@ -100,8 +88,6 @@ module Domoz
         #puts e.summary
         #puts e.start["dateTime"]
         #puts e.end["dateTime"]
-        puts
-
       end
 
       wanted_temp = calendar_default_temp if calendar_default_temp
@@ -112,7 +98,7 @@ module Domoz
     end
 
     def set_current_msg( summary, description = '' )
-      current_events = get_events( :query => 'Current' )
+      current_events = get_events( :query => 'Current' ).to_a
       if current_events.empty?
         insert_current_event( summary, description )
       else
@@ -185,6 +171,8 @@ module Domoz
     rescue Faraday::Error::ConnectionFailed => e
       puts 'Connection Failed'
       puts e.message
+    rescue Timeout::Error => e
+      puts "#{Time.now} - Timeout::Error #{e.message}"
     rescue => e
       puts 'Something else bad happened in update_current_event'
       puts e.message
@@ -193,8 +181,8 @@ module Domoz
 
     def check_result( result )
       if result.error? 
-        puts "error: "+result.error_message
-        puts "Return val: "+result.response.status.to_s
+        #puts "error: "+result.error_message
+        #puts "Return val: "+result.response.status.to_s
         if result.response.status == 401
           raise OauthRefreshError, "#{Time.now}: oauth failed, need to attempt refresh"
         #else
@@ -204,7 +192,7 @@ module Domoz
     end
 
     def get_week_events
-      events = get_events :timemax => DateTime.now + 7 , :timemin => DateTime.now  
+      events = get_events( :timemax => DateTime.now + 7 , :timemin => DateTime.now ).to_a
        
     end
 
@@ -226,15 +214,6 @@ module Domoz
       check_result result  
 
       events = result.data.items
-
-      #events.each do |e|
-      #  puts e.id
-      #  puts e.summary
-      #  puts e.start['dateTime']
-      #  puts e.end['dateTime']
-      #  puts
-      #end
-
       events
     rescue OauthRefreshError => e
       puts e.message
@@ -266,11 +245,7 @@ module Domoz
       check_result result  
 
       events = result.data.items
-      events.each do |e|
-        puts "\t"+e.inspect
-        #puts "\t"+e.description
-        puts
-      end
+      events
     rescue OauthRefreshError => e
       puts e.message
       refresh_auth

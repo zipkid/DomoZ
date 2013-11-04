@@ -23,5 +23,14 @@
     :name: Emma
   :'38000802308FAD10':
     :userbyte1: 6
-    :userbyte2: 
+    :userbyte2: 6 
     :name: Marie
+  :'9A00080230619C10':
+    :userbyte1: 7
+    :userbyte2: 7
+    :name: Achteraan
+  :'350008023078B510':
+    :userbyte1: 8
+    :userbyte2: 8
+    :name: Buitenachter
+    

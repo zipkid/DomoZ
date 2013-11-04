@@ -19,27 +19,24 @@ module Domoz
                      'owDS18S20UserByte1',
                      'owDS18S20UserByte2' ]                  
 
-      ObjectSpace.define_finalizer(self, Proc.new{ if @ows_thread.defined? then @ows_tread.join end })
     end
 
     def run
-      @ows_thread = Thread.new do
-        snmp_exec_time = Time.at(0)
-        snmp_loop_time = @loop_time
-        while true
-          if( (Time.now - snmp_exec_time) > snmp_loop_time )
-            print "+o"
-            #ows = Domoz::OwSnmp.new
-            #@temperature_data = ows.get_temp
-            get_device_count
-            get_devices_data
-            @update_time = Time.now
-            snmp_exec_time = Time.now
-            print "-o"
-          end
+      snmp_exec_time = Time.at(0)
+      snmp_loop_time = @loop_time
+      while true
+        if( (Time.now - snmp_exec_time) > snmp_loop_time )
+          print "+o"
+          #ows = Domoz::OwSnmp.new
+          #@temperature_data = ows.get_temp
+          get_device_count
+          get_devices_data
+          @update_time = Time.now
+          snmp_exec_time = Time.now
+          print "-o"
         end
+        sleep 1
       end
-
     end
     
     def get_temp
