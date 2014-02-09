@@ -187,36 +187,39 @@ begin
             sensor_data = Hash.new
 
             description = ''
+            
+            if ! @ows.nil? 
+              @ows.devices_data.each do |t|
+                
+                rom = t[:owDeviceROM] 
+                name = sensors[rom.to_sym][:name]
+                temp = t[:owDS18S20Temperature]
+                
+                if sensors[rom.to_sym][:main] == true
+                  message = t[:owDS18S20Temperature]
+                  current_temperature = t[:owDS18S20Temperature].to_f
+                  @calendar.message = message.dup
+                end
+               
+                dashing_temp = Float( temp )
+                post_to_dashing( :widget => name, :value => dashing_temp )
+                
+                if ! points_all.has_key?(name.to_sym)
+                  points_all[name.to_sym] = Array.new
+                end
+                points_all[name.to_sym] << { x: Time.now.to_i, y: dashing_temp }
+                
+                points_all[name.to_sym].shift while points_all[name.to_sym].length > 1000
 
-            @ows.devices_data.each do |t|
-              
-              rom = t[:owDeviceROM] 
-              name = sensors[rom.to_sym][:name]
-              temp = t[:owDS18S20Temperature]
-              
-              if sensors[rom.to_sym][:main] == true
-                message = t[:owDS18S20Temperature]
-                current_temperature = t[:owDS18S20Temperature].to_f
-                @calendar.message = message.dup
+                #pp points_all[name.to_sym]
+                post_to_dashing( :widget => "#{name}_Gr", :points => points_all[name.to_sym] )
+
+                description += name
+                description += " :::: "
+                description +=  temp
+                description +=  "\n"
+                sensor_data[sensors[rom.to_sym][:name].to_sym] = t[:owDS18S20Temperature]
               end
-              
-              post_to_dashing( :widget => name, :value => temp )
-              
-              if ! points_all.has_key?(name.to_sym)
-                points_all[name.to_sym] = Array.new
-              end
-              points_all[name.to_sym] << { x: Time.now.to_i, y: temp }
-              
-              points_all[name.to_sym].shift while points_all[name.to_sym].length > 100
-
-              #pp points_all[name.to_sym]
-              post_to_dashing( :widget => "#{name}_Gr", :points => points_all[name.to_sym] )
-
-              description += name
-              description += " :::: "
-              description +=  temp
-              description +=  "\n"
-              sensor_data[sensors[rom.to_sym][:name].to_sym] = t[:owDS18S20Temperature]
             end
 
             if ! @calendar.nil?
