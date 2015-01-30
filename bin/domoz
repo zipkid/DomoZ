@@ -1,0 +1,9 @@
+#!/bin/env ruby
+# encoding: utf-8
+
+begin
+  require 'domoz'
+rescue LoadError
+  require 'rubygems'
+  require 'domoz'
+end
