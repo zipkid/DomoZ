@@ -23,3 +23,6 @@ domoz-oauth.yaml
 
 deploy.sh
 
+*.pid
+
+old_domoz
