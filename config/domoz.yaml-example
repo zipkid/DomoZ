@@ -1,0 +1,16 @@
+---
+:snmp:
+  :server: <ip>
+
+:thermostat:
+  :minimum_temp: 16
+
+:sensors:
+  :'<id>':
+    :userbyte1: 1
+    :userbyte2: 1
+    :name: Office
+  :'<id>':
+    :userbyte1: 2
+    :userbyte2: 2
+    :name: Kitchen

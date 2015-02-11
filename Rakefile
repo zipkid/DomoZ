@@ -1,6 +1,5 @@
-require "bundler/gem_tasks"
+require 'bundler/gem_tasks'
 require 'rake/testtask'
-require 'simplecov'
 
 Rake::TestTask.new do |t|
   t.libs.push 'lib'

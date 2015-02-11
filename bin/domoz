@@ -55,8 +55,16 @@ domoz = Domoz.new
 
 trap 'SIGINT' do
   puts 'Waiting for termination'
+  # Thread.new { |t| domoz.stop }
   domoz.stop
-  exit 0
+  # sleep 3
+  tries = 3
+  loop do
+    p 'done'
+    exit 0 if domoz.stopped? || tries <= 0
+    sleep 0.5
+    tries -= 1
+  end
 end
 
 domoz.run

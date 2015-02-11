@@ -1,0 +1,5 @@
+---
+:google:
+  :client_id: <id>.apps.googleusercontent.com
+  :client_secret: <secret>
+  :calendar_id: <id>@group.calendar.google.com

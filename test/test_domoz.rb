@@ -1,4 +1,5 @@
 # encoding: utf-8
+require_relative 'test_helper'
 require 'minitest/autorun'
 require 'domoz'
 require 'pp'
@@ -13,4 +14,6 @@ describe Domoz do
       @domoz.must_be_instance_of Domoz
     end
   end
+
+  
 end
